@@ -8,7 +8,7 @@ app.use(cors())
 const server = http.createServer(app);
 const io = socketIO(server, {
     cors: {
-        origin: "http://127.0.0.1:5501", // Allow only this origin to connect
+        origin: ["http://127.0.0.1:5501","https://tradingview-broadcast-frontend.vercel.app"], // Allow only this origin to connect
         methods: ["GET", "POST"], // Allowed request methods
         credentials: true, // This allows session cookie to be sent, adjust according to your needs
     },
