@@ -1,8 +1,8 @@
-const puppeteer = require('puppeteer');
-const http = require('http');
-const socketIO = require('socket.io');
-const express = require('express');
-const cors = require('cors');
+const puppeteer = require("puppeteer");
+const http = require("http");
+const socketIO = require("socket.io");
+const express = require("express");
+const cors = require("cors");
 
 const app = express();
 app.use(cors());
@@ -11,7 +11,10 @@ const server = http.createServer(app);
 // Adjusted CORS configuration for Socket.IO to allow multiple origins
 const io = socketIO(server, {
     cors: {
-        origin: ["http://127.0.0.1:5501", "https://tradingview-broadcast-frontend.vercel.app"],
+        origin: [
+            "http://127.0.0.1:5501",
+            "https://tradingview-broadcast-frontend.vercel.app",
+        ],
         methods: ["GET", "POST"],
         credentials: true,
     },
@@ -20,29 +23,34 @@ const io = socketIO(server, {
 const PORT = 3000;
 
 // Test route to check the server status
-app.get('/status', (req, res) => {
-    res.json({ status: 'Server is running' });
+app.get("/status", (req, res) => {
+    res.json({ status: "Server is running" });
 });
 
 (async () => {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
     await page.setViewport({ width: 1440, height: 950, deviceScaleFactor: 3 });
-    await page.goto('https://www.tradingview.com/chart/?symbol=BITSTAMP%3ABTCUSD', {
-        waitUntil: 'networkidle0',
-    });
+    await page.goto(
+        "https://www.tradingview.com/chart/?symbol=BITSTAMP%3ABTCUSD",
+        {
+            waitUntil: "networkidle0",
+        }
+    );
 
-    io.on('connection', (socket) => {
-        console.log('Client connected');
+    io.on("connection", (socket) => {
+        console.log("Client connected");
         const captureAndBroadcast = async () => {
             let latestScreenshotBuffer = null;
             const screenshotBuffer = await page.screenshot({
                 fullPage: true,
-                encoding: 'base64',
+                encoding: "base64",
             });
             latestScreenshotBuffer = screenshotBuffer;
             if (latestScreenshotBuffer) {
-                socket.emit('screenData', { buffer: latestScreenshotBuffer.toString('base64') });
+                socket.emit("screenData", {
+                    buffer: latestScreenshotBuffer.toString("base64"),
+                });
             }
             setTimeout(captureAndBroadcast, 500); // Continue capturing every 0.5 seconds
         };
