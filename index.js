@@ -1,47 +1,56 @@
-const express = require('express');
+const puppeteer = require('puppeteer');
 const http = require('http');
 const socketIO = require('socket.io');
-const robot = require('robotjs');
+const express = require('express');
 const cors = require('cors');
 
-const PORT = process.env.PORT || 3000;
-
 const app = express();
+app.use(cors());
 const server = http.createServer(app);
-app.use(cors())
+
+// Adjusted CORS configuration for Socket.IO to allow multiple origins
 const io = socketIO(server, {
     cors: {
-        origin: "http://127.0.0.1:5501", // Allow only this origin to connect
-        methods: ["GET", "POST"], // Allowed request methods
-        credentials: true, // This allows session cookie to be sent, adjust according to your needs
+        origin: ["http://127.0.0.1:5501", "https://tradingview-broadcast-frontend.vercel.app"],
+        methods: ["GET", "POST"],
+        credentials: true,
     },
 });
 
-app.use(express.static(__dirname + '/public'));
+const PORT = 3000;
 
-io.on('connection', (socket) => {
-    console.log('Client connected');
+// Test route to check the server status
+app.get('/status', (req, res) => {
+    res.json({ status: 'Server is running' });
+});
 
-    // Function to continuously capture screen and emit to clients
-    const broadcastScreen = () => {
-        const screenSize = robot.getScreenSize();
-        const bmp = robot.screen.capture(0, 0, screenSize.width, screenSize.height);
-        const buffer = bmp.image;
-
-        // Emit screen data to clients
-        socket.emit('screenData', { buffer });
-
-        // Repeat every 100ms (adjust for desired frame rate)
-        setTimeout(broadcastScreen, 100);
-    };
-
-    broadcastScreen();
-
-    socket.on('disconnect', () => {
-        console.log('Client disconnected');
+(async () => {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1440, height: 950, deviceScaleFactor: 3 });
+    await page.goto('https://www.tradingview.com/chart/?symbol=BITSTAMP%3ABTCUSD', {
+        waitUntil: 'networkidle0',
     });
-});
 
-server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+    io.on('connection', (socket) => {
+        console.log('Client connected');
+        const captureAndBroadcast = async () => {
+            let latestScreenshotBuffer = null;
+            const screenshotBuffer = await page.screenshot({
+                fullPage: true,
+                encoding: 'base64',
+            });
+            latestScreenshotBuffer = screenshotBuffer;
+            if (latestScreenshotBuffer) {
+                socket.emit('screenData', { buffer: latestScreenshotBuffer.toString('base64') });
+            }
+            setTimeout(captureAndBroadcast, 500); // Continue capturing every 0.5 seconds
+        };
+
+        captureAndBroadcast();
+    });
+
+    server.listen(PORT, () => {
+        console.log(`Server is running on http://localhost:${PORT}`);
+    });
+})();
