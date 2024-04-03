@@ -12,8 +12,8 @@ const server = http.createServer(app);
 const io = socketIO(server, {
     cors: {
         origin: [
-            "http://127.0.0.1:5501",
-            "https://tradingview-broadcast-frontend.vercel.app",
+            "http://127.0.0.1:5500",
+            // "https://tradingview-broadcast-frontend.vercel.app",
         ],
         methods: ["GET", "POST"],
         credentials: true,
@@ -37,6 +37,7 @@ app.get("/status", (req, res) => {
             waitUntil: "networkidle0",
         }
     );
+    console.log(page);
 
     io.on("connection", (socket) => {
         console.log("Client connected");
