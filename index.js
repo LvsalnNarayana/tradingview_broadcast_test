@@ -4,7 +4,10 @@ const http = require("http");
 const socketIO = require("socket.io");
 const express = require("express");
 const cors = require("cors");
+const dotenv = require("dotenv");
+
 const app = express();
+dotenv.config();
 app.use(cors());
 const server = http.createServer(app);
 
@@ -28,7 +31,18 @@ app.get("/status", (req, res) => {
 });
 
 (async () => {
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({
+    args: [
+      "--disable-setuid-sandbox",
+      "--no-sandbox",
+      "--single-process",
+      "--no-zygote",
+    ],
+    executablePath:
+      process.env.NODE_ENV == "production"
+        ? process.env.PUPPETEER_EXECUTABLE_PATH
+        : puppeteer.executablePath(),
+  });
   // const browser = await chromium.puppeteer.launch({
   //     args: chromium.args,
   //     defaultViewport: chromium.defaultViewport,
