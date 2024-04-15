@@ -1,9 +1,9 @@
-const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-core");
 const http = require("http");
 const socketIO = require("socket.io");
 const express = require("express");
 const cors = require("cors");
-
+const chromium = require('chrome-aws-lambda');
 const app = express();
 app.use(cors());
 const server = http.createServer(app);
@@ -29,6 +29,13 @@ app.get("/status", (req, res) => {
 
 (async () => {
     const browser = await puppeteer.launch();
+    // const browser = await chromium.puppeteer.launch({
+    //     args: chromium.args,
+    //     defaultViewport: chromium.defaultViewport,
+    //     executablePath: await chromium.executablePath,
+    //     headless: chromium.headless,
+    //     ignoreHTTPSErrors: true,
+    // });
     const page = await browser.newPage();
     await page.setViewport({ width: 1440, height: 950, deviceScaleFactor: 3 });
     await page.goto(
