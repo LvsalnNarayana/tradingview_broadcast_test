@@ -50,15 +50,18 @@ app.get("/status", (req, res) => {
   //     headless: chromium.headless,
   //     ignoreHTTPSErrors: true,
   // });
-  const page = await browser.newPage();
-  await page.setViewport({ width: 1440, height: 950, deviceScaleFactor: 3 });
-  await page.goto(
-    "https://www.tradingview.com/chart/?symbol=BITSTAMP%3ABTCUSD",
-    {
-      waitUntil: "networkidle0",
-    }
-  );
-  console.log(page);
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1440, height: 950, deviceScaleFactor: 3 });
+    await page.goto(
+      "https://www.tradingview.com/chart/?symbol=BITSTAMP%3ABTCUSD",
+      {
+        waitUntil: "networkidle0",
+      }
+    );
+  } catch (error) {
+    console.log(error);
+  }
 
   io.on("connection", (socket) => {
     console.log("Client connected");
