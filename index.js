@@ -43,15 +43,9 @@ app.get("/status", (req, res) => {
         ? process.env.PUPPETEER_EXECUTABLE_PATH
         : puppeteer.executablePath(),
   });
-  // const browser = await chromium.puppeteer.launch({
-  //     args: chromium.args,
-  //     defaultViewport: chromium.defaultViewport,
-  //     executablePath: await chromium.executablePath,
-  //     headless: chromium.headless,
-  //     ignoreHTTPSErrors: true,
-  // });
+  let page;
   try {
-    const page = await browser.newPage();
+    page = await browser.newPage();
     await page.setViewport({ width: 1440, height: 950, deviceScaleFactor: 3 });
     await page.goto(
       "https://www.tradingview.com/chart/?symbol=BITSTAMP%3ABTCUSD",
