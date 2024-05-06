@@ -8,7 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "docker:build": "docker build -t tadingview_backend .",
+    "docker:build": "docker build -t tadingview_backend:latest .",
     "docker:run": "docker run -d --name tradingview_backend_container -p 3000:3000 tadingview_backend"
   },
   "keywords": [],
