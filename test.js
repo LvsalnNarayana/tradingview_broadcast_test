@@ -36,14 +36,31 @@ async function setupPuppeteer() {
   try {
     const page = await browser.newPage();
     page.setDefaultNavigationTimeout(60000);
-    await page.setViewport({ width: 1366, height: 768, deviceScaleFactor: 3 });
+    await page.setViewport({ width: 1366, height: 768, deviceScaleFactor: 1 });
+
+    // Disable loading images, stylesheets, and other unnecessary resources
+    await page.setRequestInterception(true);
+    page.on("request", (req) => {
+      const resourceType = req.resourceType();
+      if (
+        resourceType === "image" ||
+        resourceType === "stylesheet" ||
+        resourceType === "font"
+      ) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+
     await page.goto(
       "https://www.tradingview.com/chart/?symbol=BITSTAMP%3ABTCUSD",
       {
-        waitUntil: "networkidle2",
+        waitUntil: "networkidle0",
         timeout: 60000,
       }
     );
+
     await page.waitForSelector(".chart-gui-wrapper", { timeout: 60000 });
 
     const captureScreenshot = async () => {
