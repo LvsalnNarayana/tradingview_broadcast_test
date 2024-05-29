@@ -16,6 +16,7 @@ const io = socketIO(server, {
   cors: {
     origin: [
       "http://127.0.0.1:5500",
+      "http://localhost:5500",
       // "https://tradingview-broadcast-frontend.vercel.app",
     ],
     methods: ["GET", "POST"],
@@ -71,7 +72,7 @@ app.get("/status", (req, res) => {
           buffer: latestScreenshotBuffer.toString("base64"),
         });
       }
-      setTimeout(captureAndBroadcast, 500); // Continue capturing every 0.5 seconds
+      setTimeout(captureAndBroadcast, 10); // Continue capturing every 0.5 seconds
     };
 
     captureAndBroadcast();

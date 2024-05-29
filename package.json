@@ -7,7 +7,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
+    "start:test": "node test.js",
     "dev": "nodemon index.js",
+    "dev:test": "nodemon test.js",
     "docker:build": "docker build -t tadingview_backend .",
     "docker:run": "docker run -d --name tradingview_backend_container -p 3000:3000 tadingview_backend"
   },
@@ -17,10 +19,13 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
     "express": "^4.19.2",
+    "kafka-node": "^5.0.0",
     "nodemon": "^3.1.0",
     "puppeteer": "^22.6.5",
     "puppeteer-core": "^22.6.5",
-    "socket.io": "^4.7.5"
+    "socket.io": "^4.7.5",
+    "ws": "^8.17.0"
   }
 }

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradingView Chart</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <h1>TradingView Chart</h1>
+    <canvas id="chartCanvas"></canvas>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const canvas = document.getElementById('chartCanvas');
+        const context = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const screenWidth = window.innerWidth;
+            const canvasWidth = screenWidth * 0.6;
+            const canvasHeight = canvasWidth * 9 / 16; // 16:9 aspect ratio
+
+            // Set display size (css pixels).
+            canvas.style.width = canvasWidth + 'px';
+            canvas.style.height = canvasHeight + 'px';
+
+            // Set actual size in memory (scaled to account for extra pixel density).
+            const scale = window.devicePixelRatio; // Change to 1 on retina screens to see blurry canvas.
+            canvas.width = Math.floor(canvasWidth * scale);
+            canvas.height = Math.floor(canvasHeight * scale);
+
+            // Normalize coordinate system to use css pixels.
+            context.scale(scale, scale);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas(); // Initial resize
+
+        let localConnection;
+        let remoteConnection;
+        let sendChannel;
+        let receiveChannel;
+
+        function startConnection() {
+            const configuration = {
+                iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+            };
+
+            localConnection = new RTCPeerConnection(configuration);
+            sendChannel = localConnection.createDataChannel('sendDataChannel');
+            sendChannel.onopen = onSendChannelStateChange;
+            sendChannel.onclose = onSendChannelStateChange;
+
+            localConnection.onicecandidate = ({ candidate }) => {
+                if (candidate) {
+                    socket.emit('ice-candidate', candidate);
+                }
+            };
+
+            remoteConnection = new RTCPeerConnection(configuration);
+            remoteConnection.ondatachannel = receiveChannelCallback;
+            remoteConnection.onicecandidate = ({ candidate }) => {
+                if (candidate) {
+                    socket.emit('ice-candidate', candidate);
+                }
+            };
+
+            localConnection.createOffer().then(offer => {
+                localConnection.setLocalDescription(offer);
+                socket.emit('offer', offer);
+            });
+        }
+
+        function onSendChannelStateChange() {
+            const readyState = sendChannel.readyState;
+            if (readyState === 'open') {
+                // Send the screenshot data via WebRTC
+                if (latestScreenshot) {
+                    sendChannel.send(latestScreenshot);
+                }
+            }
+        }
+
+        function receiveChannelCallback(event) {
+            receiveChannel = event.channel;
+            receiveChannel.onmessage = onReceiveMessageCallback;
+            receiveChannel.onopen = onReceiveChannelStateChange;
+            receiveChannel.onclose = onReceiveChannelStateChange;
+        }
+
+        function onReceiveMessageCallback(event) {
+            const img = new Image();
+            img.src = 'data:image/png;base64,' + event.data;
+            img.onload = () => {
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(img, 0, 0, canvas.width / window.devicePixelRatio, canvas.height / window.devicePixelRatio);
+            };
+        }
+
+        function onReceiveChannelStateChange() {
+            const readyState = receiveChannel.readyState;
+            console.log('Receive channel state is: ' + readyState);
+        }
+
+        socket.on('update', (data) => {
+            const img = new Image();
+            img.src = 'data:image/png;base64,' + data;
+            img.onload = () => {
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(img, 0, 0, canvas.width / window.devicePixelRatio, canvas.height / window.devicePixelRatio);
+            };
+        });
+
+        socket.on('offer', async (offer) => {
+            await remoteConnection.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await remoteConnection.createAnswer();
+            await remoteConnection.setLocalDescription(answer);
+            socket.emit('answer', answer);
+        });
+
+        socket.on('answer', async (answer) => {
+            await localConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        });
+
+        socket.on('ice-candidate', async (candidate) => {
+            try {
+                await localConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                await remoteConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (e) {
+                console.error('Error adding received ice candidate', e);
+            }
+        });
+
+        startConnection();
+    </script>
+</body>
+</html>
