@@ -51,7 +51,8 @@ app.get("/status", (req, res) => {
     await page.goto(
       "https://www.tradingview.com/chart/?symbol=BITSTAMP%3ABTCUSD",
       {
-        waitUntil: "networkidle0",
+        waitUntil: "networkidle2",
+        timeout:60000
       }
     );
   } catch (error) {
