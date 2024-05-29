@@ -18,40 +18,26 @@ const io = new Server(server);
 
 const PORT = 3000;
 let latestScreenshot = null;
+let browser, page;
 
 async function setupPuppeteer() {
-  const browser = await puppeteer.launch({
-    args: [
-      "--disable-setuid-sandbox",
-      "--no-sandbox",
-      "--single-process",
-      "--no-zygote",
-    ],
-    executablePath:
-      process.env.NODE_ENV === "production"
-        ? process.env.PUPPETEER_EXECUTABLE_PATH
-        : puppeteer.executablePath(),
-  });
-
   try {
-    const page = await browser.newPage();
+    browser = await puppeteer.launch({
+      args: [
+        "--disable-setuid-sandbox",
+        "--no-sandbox",
+        "--single-process",
+        "--no-zygote",
+      ],
+      executablePath:
+        process.env.NODE_ENV === "production"
+          ? process.env.PUPPETEER_EXECUTABLE_PATH
+          : puppeteer.executablePath(),
+    });
+
+    page = await browser.newPage();
     page.setDefaultNavigationTimeout(60000);
     await page.setViewport({ width: 1366, height: 768, deviceScaleFactor: 3 });
-
-    // // Disable loading images, stylesheets, and other unnecessary resources
-    // await page.setRequestInterception(true);
-    // page.on("request", (req) => {
-    //   const resourceType = req.resourceType();
-    //   if (
-    //     resourceType === "image" ||
-    //     resourceType === "stylesheet" ||
-    //     resourceType === "font"
-    //   ) {
-    //     req.abort();
-    //   } else {
-    //     req.continue();
-    //   }
-    // });
 
     await page.goto(
       "https://www.tradingview.com/chart/?symbol=BITSTAMP%3ABTCUSD",
@@ -64,11 +50,13 @@ async function setupPuppeteer() {
     await page.waitForSelector(".chart-gui-wrapper", { timeout: 60000 });
 
     const captureScreenshot = async () => {
-      try {
-        latestScreenshot = await page.screenshot({ encoding: "base64" });
-        io.emit("update", latestScreenshot);
-      } catch (error) {
-        console.log(error);
+      if (!page.isClosed()) {
+        try {
+          latestScreenshot = await page.screenshot({ encoding: "base64" });
+          io.emit("update", latestScreenshot);
+        } catch (error) {
+          console.log("Error capturing screenshot:", error);
+        }
       }
     };
 
@@ -78,7 +66,7 @@ async function setupPuppeteer() {
     // Capture screenshot every second
     setInterval(captureScreenshot, 1000);
   } catch (error) {
-    console.log(error);
+    console.log("Error setting up Puppeteer:", error);
   }
 }
 
