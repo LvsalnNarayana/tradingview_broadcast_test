@@ -40,6 +40,7 @@ async function setupPuppeteer() {
       "https://www.tradingview.com/chart/?symbol=BITSTAMP%3ABTCUSD",
       {
         waitUntil: "networkidle2",
+        timeout: 60000,
       }
     );
 
