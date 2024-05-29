@@ -35,6 +35,7 @@ async function setupPuppeteer() {
 
   try {
     const page = await browser.newPage();
+    page.setDefaultNavigationTimeout(60000);
     await page.setViewport({ width: 1366, height: 768, deviceScaleFactor: 3 });
     await page.goto(
       "https://www.tradingview.com/chart/?symbol=BITSTAMP%3ABTCUSD",
@@ -43,6 +44,7 @@ async function setupPuppeteer() {
         timeout: 60000,
       }
     );
+    await page.waitForSelector(".chart-gui-wrapper", { timeout: 60000 });
 
     const captureScreenshot = async () => {
       try {
