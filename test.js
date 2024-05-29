@@ -18,11 +18,10 @@ const io = new Server(server);
 
 const PORT = 3000;
 let latestScreenshot = null;
-let browser, page;
 
 async function setupPuppeteer() {
   try {
-    browser = await puppeteer.launch({
+    const browser = await puppeteer.launch({
       args: [
         "--disable-setuid-sandbox",
         "--no-sandbox",
@@ -35,7 +34,7 @@ async function setupPuppeteer() {
           : puppeteer.executablePath(),
     });
 
-    page = await browser.newPage();
+    const page = await browser.newPage();
     page.setDefaultNavigationTimeout(60000);
     await page.setViewport({ width: 1366, height: 768, deviceScaleFactor: 3 });
 
